@@ -1,0 +1,122 @@
+{
+  "name": "kafka_consumer_offset_commit_timeout",
+  "description": "This incident type refers to a situation where a Kafka consumer is unable to commit offsets within the specified timeout period. When a consumer receives messages from a Kafka topic, it needs to commit the offset of the last processed message to ensure that it doesn't consume the same messages again. However, if the consumer takes too long to commit the offset, it can cause delays and disrupt the normal functioning of the system. This can happen due to various reasons such as network issues, slow processing, or resource constraints.",
+  "params": [
+    {
+      "name": "CONSUMER_GROUP",
+      "value": ""
+    },
+    {
+      "name": "PORT",
+      "value": ""
+    },
+    {
+      "name": "PATH_TO_KAFKA_DIRECTORY",
+      "value": ""
+    },
+    {
+      "name": "KAFKA_BROKER",
+      "value": ""
+    },
+    {
+      "name": "PATH_TO_CONSUMER_CONFIG_FILE",
+      "value": ""
+    },
+    {
+      "name": "NEW_TIMEOUT_DURATION_IN_MS",
+      "value": ""
+    },
+    {
+      "name": "HOST_NAME",
+      "value": ""
+    },
+    {
+      "name": "K8S_CLUSTER_NAME",
+      "value": ""
+    },
+    {
+      "name": "NAMESPACE",
+      "value": ""
+    }
+  ],
+  "cells": [
+    {
+      "name": "cell_1",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Kafka Consumer Offset Commit Timeout.\nThis incident type refers to a situation where a Kafka consumer is unable to commit offsets within the specified timeout period. When a consumer receives messages from a Kafka topic, it needs to commit the offset of the last processed message to ensure that it doesn't consume the same messages again. However, if the consumer takes too long to commit the offset, it can cause delays and disrupt the normal functioning of the system. This can happen due to various reasons such as network issues, slow processing, or resource constraints."
+    },
+    {
+      "name": "cell_2",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Step 1: Check if Kafka is running"
+    },
+    {
+      "name": "cell_3",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `systemctl status kafka`"
+    },
+    {
+      "name": "cell_4",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Step 2: Check the Kafka topic and partition being consumed"
+    },
+    {
+      "name": "cell_5",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `kafka-consumer-groups --bootstrap-server ${KAFKA_BROKER}:${PORT} --describe --group ${CONSUMER_GROUP}`"
+    },
+    {
+      "name": "cell_6",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Step 3: Check the offset lag for the Kafka topic and partition being consumed"
+    },
+    {
+      "name": "cell_7",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `kafka-consumer-groups --bootstrap-server ${KAFKA_BROKER}:${PORT} --describe --group ${CONSUMER_GROUP} | awk '{print $1,$6}'`"
+    },
+    {
+      "name": "cell_8",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Step 5: Check if the Kafka consumer is committing offsets"
+    },
+    {
+      "name": "cell_9",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `kafka-consumer-groups --bootstrap-server ${KAFKA_BROKER}:${PORT} --describe --group ${CONSUMER_GROUP} | awk '{print $1,$5}'`"
+    },
+    {
+      "name": "cell_10",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Step 6: Check the Kafka logs for any errors or warnings related to offsets"
+    },
+    {
+      "name": "cell_11",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `journalctl -u kafka | grep offset`"
+    },
+    {
+      "name": "cell_12",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Increase the timeout duration for Kafka Consumer Offset Commit."
+    },
+    {
+      "name": "cell_13",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_update_consumer_timeout($PATH_TO_KAFKA_DIRECTORY, $PATH_TO_CONSUMER_CONFIG_FILE, $NEW_TIMEOUT_DURATION_IN_MS)"
+    }
+  ]
+}
